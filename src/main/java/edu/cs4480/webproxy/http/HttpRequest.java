@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
@@ -38,6 +37,10 @@ public class HttpRequest extends Http{
 
 	public String getHost(){
 		return getHeader("host");
+	}
+
+	public String getPath(){
+		return uri;
 	}
 
     public String getVerb() {

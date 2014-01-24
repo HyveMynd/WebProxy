@@ -40,8 +40,8 @@ public abstract class Http {
 	protected void parseHeaders(BufferedReader in) throws IOException {
 		String line = in.readLine();
 		while(line.length() != 0){
-			String[] header = line.split(" ");
-			addHeader(header[0].replace(":", "").toUpperCase(), header[1]);
+			String[] header = line.split(":");
+			addHeader(header[0].toUpperCase(), header[1].trim());
 			line = in.readLine();
 		}
 	}
