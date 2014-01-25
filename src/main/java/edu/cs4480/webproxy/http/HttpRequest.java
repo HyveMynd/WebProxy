@@ -70,7 +70,7 @@ public class HttpRequest extends Http{
 		// No persistent connections
 		request += "Connection: close" + CRLF;
 		request += CRLF;
-		logger.debug("REQUEST:\n{}", request);
+		logger.trace("REQUEST:\n{}", request);
 		return request;
 	}
 }

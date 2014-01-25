@@ -108,8 +108,10 @@ public class ProxyServer {
 
 			// Return the cached response if it exists
 			if (CacheManager.cacheExists(request.getHost(), request.getUri())){
+				logger.info("Sending cached response...");
 				sendCachedResponse(client, request);
 			} else {
+				logger.info("Cached response does not exist. Requesting from destination server");
 				sendUnCachedResponse(client, request);
 			}
 			client.close();

@@ -79,7 +79,7 @@ public class HttpResponse extends Http{
 			response += headerKey + ": " + value + CRLF;
 		}
 		response += CRLF;
-		logger.debug("RESPONSE:\n{}", response);
+		logger.trace("RESPONSE:\n{}", response);
 		return response;
 	}
 }
