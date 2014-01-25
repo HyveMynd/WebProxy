@@ -12,7 +12,7 @@ import java.io.IOException;
  */
 public class HttpResponse extends Http{
 	private static final Logger logger = LoggerFactory.getLogger(HttpResponse.class.getName());
-	public static final int MAX_SIZE = 100000;
+	public static final int MAX_SIZE = 500000;
 	private static final int BUF_SIZE = 8192;
 	private char[] body;
 	private String statusCode;
