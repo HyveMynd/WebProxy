@@ -13,7 +13,7 @@ import java.io.*;
 public class CacheManager {
 	private static final Logger logger = LoggerFactory.getLogger(CacheManager.class.getName());
 	private static final String INDEX = "homepage";
-	private static final String CACHE_SUFFIX = ".txt";
+	private static final String CACHE_SUFFIX = "";
 
 	public static void cacheResponse(HttpResponse response, String host, String path) throws IOException {
 		// Create the directories if they do not exist
@@ -23,7 +23,7 @@ public class CacheManager {
 		String dir = getCacheFilePath(host, path);
 
 		// Write to file
-		IOUtils.write(response.toString() + new String(response.getBody()), new FileOutputStream(dir));
+		IOUtils.write(response.toString() + new String(response.getBody()), new FileOutputStream(dir), "utf-8");
 	}
 
 	public static HttpResponse getCachedResponse(String host, String path) throws IOException {

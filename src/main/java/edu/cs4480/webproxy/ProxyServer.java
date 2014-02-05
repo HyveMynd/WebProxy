@@ -79,9 +79,13 @@ public class ProxyServer {
 		HttpResponse response = new HttpResponse(new BufferedReader(new InputStreamReader(destination.getInputStream())));
 		sendResponseToClient(client, response);
 
-		// Cache response and close sockets
-		CacheManager.cacheResponse(response, request.getHost(),
-				request.getUri());
+		// Cache response
+		if (response.getStatusCode() == 200){
+			logger.info("Caching response");
+			CacheManager.cacheResponse(response, request.getHost(), request.getUri());
+		}
+
+		// Close sockets
 		logger.debug("Closing sockets");
 		destination.close();
 	}
@@ -100,11 +104,11 @@ public class ProxyServer {
 			// Parse request
 			logger.debug("Parsing request from client");
 			HttpRequest request = new HttpRequest(new BufferedReader(new InputStreamReader(client.getInputStream())));
-			logger.info("Opening a connection to the destination server: {}:{}", request.getHost(), request.getPort());
 			if (!request.getVerb().equalsIgnoreCase("get")){
 				sendError(client, 400, "Can only serve GET");
 				return;
 			}
+			logger.info("Opening a connection to the destination server: {}:{}", request.getHost(), request.getPort());
 
 			// Return the cached response if it exists
 			if (CacheManager.cacheExists(request.getHost(), request.getUri())){
@@ -123,7 +127,8 @@ public class ProxyServer {
 
 	private static void sendError(Socket client, int code, String msg) {
 		try {
-			IOUtils.write(HttpResponse.getErrorResponse(code, msg), client.getOutputStream());
+			logger.info(String.format("Sending error to client. %d %s", code, msg));
+//			IOUtils.write(HttpResponse.getErrorResponse(code, msg), client.getOutputStream());
 			client.close();
 		} catch (IOException e) {
 			logger.error("Could not send error to client.", e);

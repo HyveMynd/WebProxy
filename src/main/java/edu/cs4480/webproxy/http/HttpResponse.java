@@ -33,7 +33,8 @@ public class HttpResponse extends Http{
 	public HttpResponse(BufferedReader in){
 		this();
 		try {
-			String[] line = in.readLine().split(" ");
+			String header = in.readLine();
+			String[] line = header.split(" ");
 			setVersion(line[0]);
 			statusCode = line[1];
 			statusMsg = line[2];
@@ -59,8 +60,8 @@ public class HttpResponse extends Http{
 		}
 	}
 
-	public String getStatusCode() {
-		return statusCode;
+	public int getStatusCode() {
+		return Integer.parseInt(statusCode);
 	}
 
 	public String getStatusMsg() {
