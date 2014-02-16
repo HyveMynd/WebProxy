@@ -12,12 +12,10 @@ import java.net.URL;
  */
 public class HttpRequest extends Http{
 	private static final Logger logger = LoggerFactory.getLogger(HttpRequest.class.getName());
-    /** Help variables */
     private final static int HTTP_PORT = 80;
 
     private String method;
     private String URI;
-//    private String headers = "";
     private String host;
     private int port;
 
@@ -27,53 +25,38 @@ public class HttpRequest extends Http{
         try {
             firstLine = from.readLine();
         } catch (IOException e) {
-            System.out.println("Error reading request line: " + e);
+            logger.error("Error reading request line.", e);
         }
 
         String[] tmp = firstLine.split(" ");
-
-        method = tmp[0]; /* method GET */
-        URI =  tmp[1]; /* URI */
-        setVersion(tmp[2]); /* HTTP version */
-
-        System.out.println("URI is: " + URI);
-
-        if (!method.equals("GET")) {
-            System.out.println("Error: Method not GET");
-        }
+        method = tmp[0]; // method GET
+        URI =  tmp[1]; // URI
+        setVersion(tmp[2]); // HTTP version
+        logger.debug("URI is: {}", URI);
         try {
             parseHeaders(from);
-//            String line = from.readLine();
-//            while (line.length() != 0) {
-//                headers += line + CRLF;
-//                if (line.startsWith("Host:")) {
-//                    tmp = line.split(" ");
-//                    if (tmp[1].indexOf(':') > 0) {
-//                        String[] tmp2 = tmp[1].split(":");
-//                        host = tmp2[0];
-//                        port = Integer.parseInt(tmp2[1]);
-//                    } else {
-//                        host = tmp[1];
-//                        port = HTTP_PORT;
-//                    }
-//                }
-//                line = from.readLine();
-//            }
             host = getHeader("host");
-            tmp = host.split(" ");
-            if (tmp[1].indexOf(':') > 0) {
-                String[] tmp2 = tmp[1].split(":");
-                host = tmp2[0];
-                port = Integer.parseInt(tmp2[1]);
-            } else {
-                host = tmp[1];
-                port = HTTP_PORT;
-            }
+			if (host != null){
+				tmp = host.split(" ");
+				if (tmp[1].indexOf(':') > 0) {
+					String[] tmp2 = tmp[1].split(":");
+					host = tmp2[0];
+					port = Integer.parseInt(tmp2[1]);
+				} else {
+					host = tmp[1];
+					port = HTTP_PORT;
+				}
+			} else {
+				URL url = new URL(URI);
+				host = url.getHost();
+				URI = url.getPath().length() == 0 ? "/" : url.getPath();
+				port = HTTP_PORT;
+			}
         } catch (IOException e) {
             logger.error("Error reading from socket.", e);
             return;
         }
-        logger.debug("Host to contact is: " + host + " at port " + port);
+        logger.debug("Host to contact is: {} at port {}", host, port);
     }
 
     public String getHost() {
@@ -91,18 +74,6 @@ public class HttpRequest extends Http{
     public String getVerb() {
         return method;
     }
-
-//    public String toString() {
-//        String req = "";
-//
-//        req = method + " " + URI + " " + version + CRLF;
-//        req += headers;
-//	/* This proxy does not support persistent connections */
-//        req += "Connection: close" + CRLF;
-//        req += CRLF;
-//
-//        return req;
-//    }
 
     @Override
     public String toString() {

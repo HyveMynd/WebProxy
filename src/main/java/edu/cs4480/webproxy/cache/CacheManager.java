@@ -2,6 +2,7 @@ package edu.cs4480.webproxy.cache;
 
 import edu.cs4480.webproxy.http.HttpResponse;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CharSequenceInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,10 +29,10 @@ public class CacheManager {
 
 	public static HttpResponse getCachedResponse(String host, String path) throws IOException {
 		// Read from file
-		FileReader reader = new FileReader(getCacheFilePath(host, path));
-		char[] content = new char[HttpResponse.MAX_SIZE];
-		IOUtils.read(reader, content);
-		return new HttpResponse(content);
+		String filepath = getCacheFilePath(host, path);
+		byte[] content = new byte[HttpResponse.MAX_OBJECT_SIZE];
+		IOUtils.read(new FileInputStream(filepath), content);
+		return new HttpResponse(new DataInputStream(new ByteArrayInputStream(content)));
 	}
 
 	public static boolean cacheExists(String host, String path){

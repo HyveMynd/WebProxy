@@ -16,7 +16,7 @@ public class HttpResponse extends Http{
 
     /** Maximum size of objects that this proxy can handle. For the
      * moment set to 100 KB. You can adjust this as needed. */
-    private final static int MAX_OBJECT_SIZE = 500000;
+    public final static int MAX_OBJECT_SIZE = 500000;
 
     private String statusLine = "";
 //    private String headers = "";
@@ -85,16 +85,6 @@ public class HttpResponse extends Http{
     public byte[] getBody() {
         return body;
     }
-
-//    public String toString() {
-//        String res = "";
-//
-//        res = statusLine + CRLF;
-//        res += headers;
-//        res += CRLF;
-//
-//        return res;
-//    }
 
     @Override
     public String toString() {
