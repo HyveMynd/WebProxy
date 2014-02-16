@@ -3,84 +3,108 @@ package edu.cs4480.webproxy.http;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.CharArrayReader;
-import java.io.IOException;
+import java.io.*;
 
 /**
  * Created by andresmonroy on 1/21/14.
  */
 public class HttpResponse extends Http{
 	private static final Logger logger = LoggerFactory.getLogger(HttpResponse.class.getName());
-	public static final int MAX_SIZE = 500000;
-	private static final int BUF_SIZE = 8192;
-	private char[] body;
-	private String statusCode;
-	private String statusMsg;
 
-	public static String getErrorResponse(int code, String msg){
-		return String.format("HTTP/1.1 %d %s" + CRLF, code, msg);
-	}
+    /** How big is the buffer used for reading the object */
+    private final static int BUF_SIZE = 8192;
 
-	private HttpResponse(){
-		body = new char[MAX_SIZE];
-	}
+    /** Maximum size of objects that this proxy can handle. For the
+     * moment set to 100 KB. You can adjust this as needed. */
+    private final static int MAX_OBJECT_SIZE = 500000;
 
-	public HttpResponse(char[] content){
-		this(new BufferedReader(new CharArrayReader(content)));
-	}
+    private String statusLine = "";
+//    private String headers = "";
+    private byte[] body = new byte[MAX_OBJECT_SIZE];
 
-	public HttpResponse(BufferedReader in){
-		this();
-		try {
-			String header = in.readLine();
-			String[] line = header.split(" ");
-			setVersion(line[0]);
-			statusCode = line[1];
-			statusMsg = line[2];
-			parseHeaders(in);
-			parseBody(in);
-		} catch (IOException e) {
-			logger.error("Unable to parse response: {}", e);
-			return;
-		}
-		logger.debug("Response success. StatusCode: {}, MSG: {}", statusCode, statusMsg);
-	}
+    public HttpResponse(DataInputStream fromServer) {
+	/* Length of the object */
+        int length = -1;
+        boolean gotStatusLine = false;
+        BufferedReader reader = new BufferedReader(new InputStreamReader(fromServer));
 
-	private void parseBody(BufferedReader in) throws IOException{
-		int contentLength = -1;
-		int bytesRead = 0;
-		int offset = 0;
-		if (getHeader("content-length") != null){
-			contentLength = Integer.parseInt(getHeader("content-length"));
-		}
-		while(bytesRead < contentLength && bytesRead != -1 && offset < MAX_SIZE){
-			bytesRead = in.read(body, offset, BUF_SIZE);
-			offset = bytesRead;
-		}
-	}
+        try {
+            String line = reader.readLine();
+            while (line.length() != 0) {
+                if (!gotStatusLine) {
+                    statusLine = line;
+                    gotStatusLine = true;
+                } else {
+//                    headers += line + CRLF;
+                    parseHeaders(reader);
+                }
+//                if (line.startsWith("Content-Length:") ||
+//                        line.startsWith("Content-length:")) {
+//                    String[] tmp = line.split(" ");
+//                    length = Integer.parseInt(tmp[1]);
+//                }
+                length = Integer.parseInt(getHeader("content-length"));
+                line = reader.readLine();
+            }
+        } catch (IOException e) {
+            logger.error("Error while reading from response header.", e);
+        }
 
-	public int getStatusCode() {
-		return Integer.parseInt(statusCode);
-	}
+        try {
+            int bytesRead = 0;
+            byte buf[] = new byte[BUF_SIZE];
+            boolean loop = false;
 
-	public String getStatusMsg() {
-		return statusMsg;
-	}
+            if (length == -1) {
+                loop = true;
+            }
+            while (bytesRead < length || loop) {
+                int res = fromServer.read(buf, 0, BUF_SIZE);
+                if (res == -1) {
+                    break;
+                }
+                for (int i = 0;
+                     i < res && (i + bytesRead) < MAX_OBJECT_SIZE;
+                     i++) {
+                    body[bytesRead + i] = buf[i];
+                }
+                bytesRead += res;
+            }
+        } catch (IOException e) {
+            logger.error("Error reading response body.", e);
+            return;
+        }
 
-	public char[] getBody() {
-		return body;
-	}
 
-	@Override
-	public String toString() {
-		String response = getVersion() + " " + statusCode + " " + statusMsg + CRLF;
-		for (String headerKey : getHeadersKeys()){
-			String value = getHeader(headerKey);
-			response += headerKey + ": " + value + CRLF;
-		}
-		response += CRLF;
-		logger.trace("RESPONSE:\n{}", response);
-		return response;
-	}
+    }
+
+    public int getStatusCode() {
+        return Integer.parseInt(statusLine.split(" ")[0]);
+    }
+
+    public byte[] getBody() {
+        return body;
+    }
+
+//    public String toString() {
+//        String res = "";
+//
+//        res = statusLine + CRLF;
+//        res += headers;
+//        res += CRLF;
+//
+//        return res;
+//    }
+
+    @Override
+    public String toString() {
+        String response = statusLine + CRLF;
+        for (String headerKey : getHeadersKeys()){
+            String value = getHeader(headerKey);
+            response += headerKey + ": " + value + CRLF;
+        }
+        response += CRLF;
+        logger.trace("RESPONSE:\n{}", response);
+        return response;
+    }
 }

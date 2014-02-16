@@ -7,10 +7,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -76,7 +73,7 @@ public class ProxyServer {
 
 		// Read response from destination server and send to client
 		logger.debug("Reading response from destination server");
-		HttpResponse response = new HttpResponse(new BufferedReader(new InputStreamReader(destination.getInputStream())));
+		HttpResponse response = new HttpResponse(new DataInputStream(destination.getInputStream()));
 		sendResponseToClient(client, response);
 
 		// Cache response
