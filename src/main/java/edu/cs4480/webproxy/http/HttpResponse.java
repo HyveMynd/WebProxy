@@ -26,28 +26,34 @@ public class HttpResponse extends Http{
 	/* Length of the object */
         int length = -1;
         boolean gotStatusLine = false;
-        BufferedReader reader = new BufferedReader(new InputStreamReader(fromServer));
+        BufferedReader in = new BufferedReader(new InputStreamReader(fromServer));
 
         try {
-            String line = reader.readLine();
-            while (line.length() != 0) {
-                if (!gotStatusLine) {
-                    statusLine = line;
-                    gotStatusLine = true;
-                } else {
-//                    headers += line + CRLF;
-                    parseHeaders(reader);
-                }
-//                if (line.startsWith("Content-Length:") ||
-//                        line.startsWith("Content-length:")) {
-//                    String[] tmp = line.split(" ");
-//                    length = Integer.parseInt(tmp[1]);
+
+            String[] line = in.readLine().split(" ");
+            setVersion(line[0]);
+            statusLine = line[2];
+            parseHeaders(in);
+
+//            String line = reader.readLine();
+//            while (line.length() != 0) {
+//                if (!gotStatusLine) {
+//                    statusLine = line;
+//                    gotStatusLine = true;
+//                } else {
+////                    headers += line + CRLF;
+//                    parseHeaders(reader);
 //                }
-                length = Integer.parseInt(getHeader("content-length"));
-                line = reader.readLine();
-            }
+////                if (line.startsWith("Content-Length:") ||
+////                        line.startsWith("Content-length:")) {
+////                    String[] tmp = line.split(" ");
+////                    length = Integer.parseInt(tmp[1]);
+////                }
+//                length = Integer.parseInt(getHeader("content-length"));
+//                line = reader.readLine();
+//            }
         } catch (IOException e) {
-            logger.error("Error while reading from response header.", e);
+            logger.error("Error while reading from response.", e);
         }
 
         try {
