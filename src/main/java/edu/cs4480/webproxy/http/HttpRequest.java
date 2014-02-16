@@ -16,10 +16,8 @@ public class HttpRequest extends Http{
 
     private String method;
     private String URI;
-    private String host;
     private int port;
 
-    /** Create HttpRequest by reading it from the client socket */
     public HttpRequest(BufferedReader from) {
         String firstLine = "";
         try {
@@ -32,35 +30,30 @@ public class HttpRequest extends Http{
         method = tmp[0]; // method GET
         URI =  tmp[1]; // URI
         setVersion(tmp[2]); // HTTP version
-        logger.debug("URI is: {}", URI);
+        logger.info("URI is: {}", URI);
         try {
             parseHeaders(from);
-            host = getHeader("host");
-			if (host != null){
-				tmp = host.split(" ");
-				if (tmp[1].indexOf(':') > 0) {
-					String[] tmp2 = tmp[1].split(":");
-					host = tmp2[0];
-					port = Integer.parseInt(tmp2[1]);
-				} else {
-					host = tmp[1];
-					port = HTTP_PORT;
-				}
-			} else {
+            if (URI.startsWith("http")){
 				URL url = new URL(URI);
-				host = url.getHost();
+				addHeader("host", url.getHost());
+				port = HTTP_PORT;
 				URI = url.getPath().length() == 0 ? "/" : url.getPath();
+			}
+			String host = getHost();
+			if (host.indexOf(":") > 0){
+				tmp = host.split(":");
+				port = Integer.parseInt(tmp[1]);
+				addHeader("host", tmp[0]);
+			} else {
 				port = HTTP_PORT;
 			}
-        } catch (IOException e) {
+		} catch (IOException e) {
             logger.error("Error reading from socket.", e);
-            return;
         }
-        logger.debug("Host to contact is: {} at port {}", host, port);
     }
 
     public String getHost() {
-        return host;
+        return getHeader("host");
     }
 
     public int getPort() {
@@ -77,7 +70,7 @@ public class HttpRequest extends Http{
 
     @Override
     public String toString() {
-        String request = method + " " + URI + " " + "HTTP/1.0" + CRLF;
+		String request = String.format("%s %s %s\r\n", method, URI, getVersion());
         for (String headerKey : getHeadersKeys()){
             String value = getHeader(headerKey);
             request += headerKey + ": " + value + CRLF;

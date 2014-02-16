@@ -1,8 +1,10 @@
 package edu.cs4480.webproxy.http;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -13,6 +15,10 @@ public abstract class Http {
 	protected static final String CRLF = "\r\n";
 	private Map<String, String> headers;
 	private String version;
+
+	protected Http(){
+		headers = new HashMap<>();
+	}
 
 	public String getHeader(String headerKey){
 		try{
@@ -35,6 +41,15 @@ public abstract class Http {
 
 	public void setVersion(String version) {
 		this.version = version;
+	}
+
+	protected void parseHeaders(DataInputStream in) throws IOException {
+		String line = in.readLine();
+		while(line.length() != 0){
+			String[] header = line.split(":");
+			addHeader(header[0].toUpperCase(), header[1].trim());
+			line = in.readLine();
+		}
 	}
 
 	protected void parseHeaders(BufferedReader in) throws IOException {
