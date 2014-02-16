@@ -3,7 +3,6 @@ package edu.cs4480.webproxy;
 import edu.cs4480.webproxy.cache.CacheManager;
 import edu.cs4480.webproxy.http.HttpRequest;
 import edu.cs4480.webproxy.http.HttpResponse;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

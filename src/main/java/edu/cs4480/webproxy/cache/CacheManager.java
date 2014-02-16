@@ -2,7 +2,6 @@ package edu.cs4480.webproxy.cache;
 
 import edu.cs4480.webproxy.http.HttpResponse;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.CharSequenceInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
