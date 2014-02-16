@@ -59,17 +59,23 @@ public class ProxyServer {
 		}
 	}
 
-	public static void sendCachedResponse(Socket client, HttpRequest request) throws IOException {
+	private static void sendCachedResponse(Socket client, HttpRequest request) throws IOException {
 		// Get cached response and send response object
 		HttpResponse response = CacheManager.getCachedResponse(request.getHost(), request.getUri());
 		sendResponseToClient(client, response);
 	}
 
-	public static void sendUnCachedResponse(Socket client, HttpRequest request) throws IOException {
+	private static void sendUnCachedResponse(Socket client, HttpRequest request) throws IOException {
 		// Open socket to destination server and send the request
-		Socket destination = new Socket(request.getHost(), request.getPort());
+        Socket destination = null;
+        try {
+		destination = new Socket(request.getHost(), request.getPort());
 		logger.debug("Sending request to the destination server");
-		IOUtils.write(request.toString(), destination.getOutputStream());
+		new DataOutputStream(destination.getOutputStream()).writeBytes(request.toString());
+        } catch (UnknownHostException e){
+            logger.error("Unknown host {}: {}", request.getHost(), e.getMessage());
+            return;
+        }
 
 		// Read response from destination server and send to client
 		logger.debug("Reading response from destination server");
@@ -90,10 +96,9 @@ public class ProxyServer {
 	private static void sendResponseToClient(Socket client, HttpResponse response) throws IOException {
 		// Send response to client
 		logger.debug("Sending response to client");
-		OutputStream out = client.getOutputStream();
-		IOUtils.write(response.toString(), out);
-		IOUtils.write(response.getBody(), out);
-		logger.debug("Caching response");
+        DataOutputStream out = new DataOutputStream(client.getOutputStream());
+		out.writeBytes(response.toString());
+		out.write(response.getBody());
 	}
 
 	public static void handleRequest(Socket client){
@@ -102,7 +107,7 @@ public class ProxyServer {
 			logger.debug("Parsing request from client");
 			HttpRequest request = new HttpRequest(new BufferedReader(new InputStreamReader(client.getInputStream())));
 			if (!request.getVerb().equalsIgnoreCase("get")){
-				sendError(client, 400, "Can only serve GET");
+                logger.error("Can only handle GET verb");
 				return;
 			}
 			logger.info("Opening a connection to the destination server: {}:{}", request.getHost(), request.getPort());
@@ -118,17 +123,6 @@ public class ProxyServer {
 			client.close();
 		} catch (IOException e) {
 			logger.error("An error occurred while handling a request.", e);
-			sendError(client, 400, "Bad request");
-		}
-	}
-
-	private static void sendError(Socket client, int code, String msg) {
-		try {
-			logger.info(String.format("Sending error to client. %d %s", code, msg));
-//			IOUtils.write(HttpResponse.getErrorResponse(code, msg), client.getOutputStream());
-			client.close();
-		} catch (IOException e) {
-			logger.error("Could not send error to client.", e);
 		}
 	}
 
@@ -163,7 +157,6 @@ public class ProxyServer {
 				handleRequest(client);
 			} catch (Exception e){
 				logger.error("Request failed. Sending error.");
-				sendError(client, 500, e.getMessage());
 			}
 		}
 	}
