@@ -18,13 +18,17 @@ public class HttpRequest extends Http{
     private String URI;
     private int port;
 
-    public HttpRequest(BufferedReader from) {
+    public HttpRequest(BufferedReader from) throws IOException {
         String firstLine = "";
         try {
             firstLine = from.readLine();
         } catch (IOException e) {
             logger.error("Error reading request line.", e);
+			return;
         }
+		if (firstLine == null){
+			throw new IOException("Request terminated early. First line is null.");
+		}
 
         String[] tmp = firstLine.split(" ");
         method = tmp[0]; // method GET
@@ -82,5 +86,9 @@ public class HttpRequest extends Http{
         logger.trace("REQUEST:\n{}", request);
         return request;
     }
+
+	public void addConditionalHeader(String lastModified){
+		addHeader("if-modified-since", lastModified);
+	}
 }
 

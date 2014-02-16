@@ -38,27 +38,23 @@ public class RequestHandler implements Runnable{
 			}
 			logger.info("Opening a connection to the destination server: {}:{}", request.getHost(), request.getPort());
 
-			// Return the cached response if it exists
+			// Add the conditional get if the cache exists
 			if (CacheManager.cacheExists(request)){
-				logger.debug("Sending cached response...");
-				sendCachedResponse(client, request);
-			} else {
-				logger.debug("Cached response does not exist. Requesting from destination server");
-				sendUnCachedResponse(client, request);
+				request.addConditionalHeader(CacheManager.getLastModified(request));
 			}
+				sendRequestToServer(client, request);
 			client.close();
 		} catch (IOException e) {
 			logger.error("An error occurred while handling a request.", e);
 		}
 	}
 
-	private void sendUnCachedResponse(Socket client, HttpRequest request) throws IOException {
-		// Open socket to destination server and send the request
-		Socket destination = null;
+	private void sendRequestToServer(Socket client, HttpRequest request) throws IOException {
+		Socket server;
 		try {
-			destination = new Socket(request.getHost(), request.getPort());
+			server = new Socket(request.getHost(), request.getPort());
 			logger.debug("Sending request to the destination server");
-			DataOutputStream out = new DataOutputStream(destination.getOutputStream());
+			DataOutputStream out = new DataOutputStream(server.getOutputStream());
 			out.writeBytes(request.toString());
 		} catch (UnknownHostException e){
 			logger.error("Unknown host {}: {}", request.getHost(), e.getMessage());
@@ -67,16 +63,29 @@ public class RequestHandler implements Runnable{
 
 		// Read response from destination server and send to client
 		logger.debug("Reading response from destination server");
-		HttpResponse response = new HttpResponse(new DataInputStream(destination.getInputStream()));
+		HttpResponse response = new HttpResponse(new DataInputStream(server.getInputStream()));
+
+		// Send cached response if the conditional get returns 304
+		if(response.getStatusCode() == 304){
+			logger.debug("A cache exists for the response. Sending data.");
+			sendCachedResponse(client, request);
+		} else {
+			logger.debug("Cached response does not exist. Sending data.");
+			sendUnCachedResponse(client, request, response);
+		}
+
+		// Close sockets
+		logger.debug("Closing sockets");
+		server.close();
+	}
+
+	private void sendUnCachedResponse(Socket client, HttpRequest request, HttpResponse response) throws IOException {
+		// Send the response back the client
 		sendResponseToClient(client, response);
 
 		// Cache response
 		logger.debug("Caching response");
 		CacheManager.cacheResponse(request, response);
-
-		// Close sockets
-		logger.debug("Closing sockets");
-		destination.close();
 	}
 
 

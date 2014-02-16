@@ -35,6 +35,15 @@ public class HttpResponse extends Http{
         return body;
     }
 
+	public String getLastModified(){
+		String date = getHeader("LAST-MODIFIED");
+		return (date == null) ? "" : date;
+	}
+
+	public int getStatusCode(){
+		return Integer.parseInt(statusLine.split(" ")[1]);
+	}
+
 	public String toString() {
 		String response = statusLine + CRLF;
 		for (String headerKey : getHeadersKeys()){

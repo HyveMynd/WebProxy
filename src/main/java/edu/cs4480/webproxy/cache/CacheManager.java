@@ -15,40 +15,34 @@ import java.util.Map;
  */
 public class CacheManager {
 	private static final Logger logger = LoggerFactory.getLogger(CacheManager.class.getName());
-	private static Map<String, String> cache = new Hashtable<>();
+	private static Map<String, CacheFile> cache = new Hashtable<>();
 
 	public synchronized static void cacheResponse(HttpRequest request, HttpResponse response) throws IOException {
 
 		// Output file based on last modified date
 		String url = request.getHost() + request.getUri();
-		String filename = String.format("cached_%s", getSanitizedDate(response));
-		File cacheFile = new File("cache/");
-		if (!cacheFile.exists()){
-			cacheFile.mkdirs();
+		File file = new File("cache/");
+		String filename = Long.toString(System.currentTimeMillis());
+		if (!file.exists()){
+			file.mkdirs();
 		}
-		cacheFile = new File(cacheFile, filename);
-		logger.info("Saving cache to file: {}", cacheFile.getAbsolutePath());
-		DataOutputStream out = new DataOutputStream(new FileOutputStream(cacheFile));
+		file = new File(file, filename);
+		logger.info("Saving cache to file: {}", file.getAbsolutePath());
+		DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
 		out.writeBytes(response.toString());
 		out.write(response.getBody());
 		out.close();
 
 		// Save cache to map
-		cache.put(url, cacheFile.getAbsolutePath());
-	}
-
-	private synchronized static String getSanitizedDate(HttpResponse response){
-		String date = response.getHeader("Last-modified");
-		if (date != null){
-			date = date.replaceAll(",", "");
-			date = date.replaceAll(" ", "");
-			return date.replaceAll(":", "");
-		}
-		return Long.toString(System.currentTimeMillis());
+		cache.put(url, new CacheFile(file.getAbsolutePath(), response.getLastModified()));
 	}
 
 	public synchronized static boolean cacheExists(HttpRequest request){
 		return cache.get(request.getHost() + request.getUri()) != null;
+	}
+
+	public synchronized static String getLastModified(HttpRequest request){
+		return cache.get(request.getHost() + request.getUri()).lastModified;
 	}
 
 	public synchronized static byte[] getCachedResponse(HttpRequest request) throws IOException {
@@ -56,18 +50,27 @@ public class CacheManager {
 		// Get file based on value of url key
 		byte[] bytesCached = new byte[0];
 		String url = request.getHost() + request.getUri();
-		String path = cache.get(url);
-		if (path != null){
+		CacheFile cacheFile = cache.get(url);
+		if (cacheFile != null){
 			logger.info("Cache hit on: {}", url);
-			logger.info("Getting file cached at: {}", path);
-			File file = new File(path);
+			logger.info("Getting file cached at: {}", cacheFile.filePath);
+			File file = new File(cacheFile.filePath);
 			FileInputStream in = new FileInputStream(file);
 			bytesCached = new byte[(int)file.length()];
 			IOUtils.read(in, bytesCached);
 		} else {
-			logger.error("Cache miss at: {}\nFile: {}", url, path);
+			logger.error("Cache miss at: {}\n", url);
 		}
 		return bytesCached;
 	}
 
+	static class CacheFile{
+		String filePath;
+		String lastModified;
+
+		public CacheFile(String filePath, String lastModified){
+			this.filePath = filePath;
+			this.lastModified = lastModified;
+		}
+	}
 }
