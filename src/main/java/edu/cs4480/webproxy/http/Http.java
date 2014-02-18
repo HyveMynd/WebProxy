@@ -17,7 +17,7 @@ public abstract class Http {
 	private String version;
 
 	protected Http(){
-		headers = new HashMap<>();
+		headers = new HashMap<String, String>();
 	}
 
 	public String getHeader(String headerKey){

@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public class CacheManager {
 	private static final Logger logger = LoggerFactory.getLogger(CacheManager.class.getName());
-	private static Map<String, CacheFile> cache = new Hashtable<>();
+	private static Map<String, CacheFile> cache = new Hashtable<String, CacheFile>();
 
 	public synchronized static void cacheResponse(HttpRequest request, HttpResponse response) throws IOException {
 
