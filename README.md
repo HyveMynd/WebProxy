@@ -1,5 +1,6 @@
 WebProxy
 ========
+A simple WebProxy created for the Univesity of Utah CS4480 Networking Programming course.
 
 Usage:
 java -jar [jar-name] [ip] [port]
